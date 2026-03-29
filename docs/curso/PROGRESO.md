@@ -17,8 +17,8 @@
 | **6. Human in the Loop** | 1 | ✅ Completo | 1 doc, 1 código |
 | **7. Ejercicios Resueltos** | 1 | ✅ Completo | 1 doc, 1 código |
 | **8. Mejores Prácticas** | 1 | ✅ Completo | 1 doc |
-| **9. RAG Fundamentos** | 0 | ⏳ Pendiente | - |
-| **10. RAG Avanzado** | 0 | ⏳ Pendiente | - |
+| **9. RAG Fundamentos** | 1 | ✅ Completo | 1 doc, 1 código |
+| **10. RAG Avanzado** | 1 | ✅ Completo | 1 doc, 1 código |
 | **11. Patrones Avanzados** | 0 | ⏳ Pendiente | - |
 | **12. Producción** | 0 | ⏳ Pendiente | - |
 | **13. Proyecto Final** | 0 | ⏳ Pendiente | - |
