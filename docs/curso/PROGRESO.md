@@ -19,11 +19,12 @@
 | **8. Mejores Prácticas** | 1 | ✅ Completo | 1 doc |
 | **9. RAG Fundamentos** | 1 | ✅ Completo | 1 doc, 1 código |
 | **10. RAG Avanzado** | 1 | ✅ Completo | 1 doc, 1 código |
-| **11. Patrones Avanzados** | 0 | ⏳ Pendiente | - |
-| **12. Producción** | 0 | ⏳ Pendiente | - |
-| **13. Proyecto Final** | 0 | ⏳ Pendiente | - |
+| **11. Patrones Avanzados** | 1 | ✅ Completo | 1 doc, 1 código |
+| **12. Casos Reales Producción** | 1 | ✅ Completo | 1 doc, 2 códigos |
+| **13. Producción y Deploy** | 1 | ✅ Completo | 1 doc, 3 códigos |
+| **14. Proyecto Final** | 0 | ⏳ Pendiente | - |
 
-**Progreso Total: 35% (5/12 módulos completos)**
+**Progreso Total: 93% (13/14 módulos completos)**
 
 ---
 

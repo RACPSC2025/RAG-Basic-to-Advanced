@@ -1,0 +1,230 @@
+version: '3.8'
+
+# ===========================================
+# Docker Compose - Legal RAG Agent
+# ===========================================
+# Servicios:
+# - legal-rag: Aplicación principal
+# - qdrant: Vector store
+# - postgres: Base de datos
+# - prometheus: Métricas
+# - grafana: Dashboards
+# ===========================================
+
+services:
+  # ===========================================
+  # Aplicación Principal
+  # ===========================================
+  legal-rag:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: legal-rag-agent
+    ports:
+      - "8000:8000"
+    environment:
+      # Google Gemini API
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      
+      # Qdrant Vector Store
+      - QDRANT_URL=http://qdrant:6333
+      - QDRANT_API_KEY=
+      
+      # LangSmith Observability
+      - LANGSMITH_TRACING=true
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY}
+      - LANGSMITH_PROJECT=legal-rag-production
+      
+      # Base de Datos
+      - DATABASE_URL=postgresql://user:password@postgres:5432/legal_rag
+      
+      # Configuración de la Aplicación
+      - APP_NAME=Legal RAG Agent
+      - ENVIRONMENT=development
+      - LOG_LEVEL=INFO
+      
+      # Rate Limiting
+      - RATE_LIMIT_PER_MINUTE=60
+      
+      # Seguridad
+      - SECRET_KEY=${SECRET_KEY}
+    
+    depends_on:
+      qdrant:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+    
+    networks:
+      - legal-rag-network
+    
+    restart: unless-stopped
+    
+    # Límites de recursos
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ===========================================
+  # Qdrant Vector Store
+  # ===========================================
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant-vector-store
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334
+      - QDRANT__LOG_LEVEL=info
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - legal-rag-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
+  # ===========================================
+  # PostgreSQL (Persistencia)
+  # ===========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres-db
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=legal_rag
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d legal_rag"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - legal-rag-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+
+  # ===========================================
+  # Prometheus (Métricas)
+  # ===========================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus-monitoring
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=28d'
+      - '--web.enable-lifecycle'
+    networks:
+      - legal-rag-network
+    restart: unless-stopped
+    depends_on:
+      - legal-rag
+
+  # ===========================================
+  # Grafana (Dashboards)
+  # ===========================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana-dashboards
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/etc/grafana/dashboards
+    depends_on:
+      - prometheus
+    networks:
+      - legal-rag-network
+    restart: unless-stopped
+
+  # ===========================================
+  # Redis (Cache)
+  # ===========================================
+  redis:
+    image: redis:7-alpine
+    container_name: redis-cache
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - legal-rag-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+volumes:
+  qdrant_storage:
+    driver: local
+  postgres_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  legal-rag-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
