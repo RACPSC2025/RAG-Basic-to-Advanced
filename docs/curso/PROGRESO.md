@@ -14,7 +14,7 @@
 | **3. Streaming** | 1 | ✅ Completo | 1 doc, 1 código |
 | **4. LangGraph Básico** | 1 | ✅ Completo | 1 doc, 1 código |
 | **5. Herramientas** | 3 | ✅ Completo | 1 docs, 3 códigos |
-| **6. Human in the Loop** | 0 | ⏳ Pendiente | - |
+| **6. Human in the Loop** | 1 | ✅ Completo | 1 doc, 1 código |
 | **7. RAG Fundamentos** | 0 | ⏳ Pendiente | - |
 | **8. RAG Avanzado** | 0 | ⏳ Pendiente | - |
 | **9. Patrones Avanzados** | 0 | ⏳ Pendiente | - |
@@ -174,6 +174,44 @@ RAG MVP/
 - Error handling automático
 - Estado personalizado con ToolNode
 - Grafo básico vs avanzado
+
+### Módulo 6: Human in the Loop ✅
+
+#### 6.1 Introducción a Interrupts
+- Qué es `interrupt()` y cómo funciona
+- Requisitos: checkpointer, thread ID
+- Pausar ejecución y guardar estado
+- Reanudar con `Command(resume=valor)`
+
+#### 6.2 Aprobación o Rechazo
+- Patrón Approval Workflow
+- Routear basado en decisión humana
+- Ejemplo: aprobación de emails
+- Ejemplo: aprobación de acciones legales
+
+#### 6.3 Revisión y Edición
+- Patrón Review and Edit
+- Permitir edición de contenido LLM
+- Ejemplo: revisión de documentos legales
+- Checklists de validación
+
+#### 6.4 Interrupts en Herramientas
+- Tools que requieren aprobación
+- Editar tool calls antes de ejecutar
+- Ejemplo: enviar comunicado oficial
+- Integración con ToolNode
+
+#### 6.5 Múltiples Interrupts
+- Parallel branches con interrupts
+- Manejar múltiples aprobaciones
+- Mapa de IDs para resume
+- Ejemplo: aprobaciones en paralelo
+
+#### 6.6 Time Travel
+- Volver a estados anteriores
+- Checkpoint history
+- Re-ejecutar desde checkpoint
+- Depuración con LangSmith
 
 ---
 

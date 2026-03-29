@@ -3,7 +3,8 @@
     "allow": [
       "mcp__filesystem__create_directory",
       "Bash(dir *)",
-      "mcp__mcp-server-firecrawl__firecrawl_scrape"
+      "mcp__mcp-server-firecrawl__firecrawl_scrape",
+      "mcp__mcp-server-firecrawl__firecrawl_search"
     ]
   },
   "$version": 3
