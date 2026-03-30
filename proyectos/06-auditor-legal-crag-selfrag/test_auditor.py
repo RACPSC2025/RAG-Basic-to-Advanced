@@ -15,12 +15,12 @@ def test_config():
     print("=" * 70)
     print("TEST DE CONFIGURACION")
     print("=" * 70)
-    print(f"LLM Model: {Config.LLM_MODEL}")
-    print(f"Embedding Model: {Config.EMBEDDING_MODEL}")
+    print(f"LLM Model: {Config.LLM_MODEL_ID}")
+    print(f"Embedding Model: {Config.EMBEDDING_MODEL_ID}")
     print(f"RPM: {Config.RPM}")
     print(f"Request Delay: {Config.REQUEST_DELAY:.2f}s")
     print(f"Max Retries: {Config.MAX_RETRIES}")
-    print(f"Google API Key: {'CONFIGURADA' if Config.GOOGLE_API_KEY else 'NO CONFIGURADA'}")
+    print(f"AWS Access Key: {'CONFIGURADA' if Config.AWS_ACCESS_KEY_ID else 'NO CONFIGURADA'}")
     print()
 
 def test_graph_creation():

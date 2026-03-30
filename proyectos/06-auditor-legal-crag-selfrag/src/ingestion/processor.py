@@ -1,9 +1,14 @@
+"""
+Processor de Ingesta Legal - Proyecto 6 (CRAG + Self-RAG)
+
+Migrado a AWS Bedrock - 2026-03-30
+"""
+
 import time
-import os
 import logging
-from typing import List, Dict, Any
+from typing import List, Dict
 from langchain_core.documents import Document
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_aws import BedrockEmbeddings
 from langchain_chroma import Chroma
 from llama_parse import LlamaParse
 from tenacity import (
@@ -19,22 +24,35 @@ from ..utils.visuals import IngestionUI, console
 
 logger = logging.getLogger(__name__)
 
+
 class LegalIngestor:
     """
     Motor de ingesta dinámico basado en Rate Limits de .env.
+    Usa AWS Bedrock para embeddings (Titan Text v2).
     """
+    
     def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
-        self.auditor = TokenAuditor()
-        self.embeddings = GoogleGenerativeAIEmbeddings(model=Config.EMBEDDING_MODEL)
+        self.auditor = TokenAuditor(model_name="amazon.titan-embed-text-v2:0")
         
         if not dry_run:
+            # Embeddings: Amazon Titan Text v2 via AWS Bedrock
+            self.embeddings = BedrockEmbeddings(
+                model_id=Config.EMBEDDING_MODEL_ID,
+                aws_access_key_id=Config.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=Config.AWS_SECRET_ACCESS_KEY,
+                aws_session_token=Config.AWS_SESSION_TOKEN if Config.AWS_SESSION_TOKEN else None,
+                region_name=Config.AWS_REGION,
+                normalize=True,
+            )
+            
             self.vector_store = Chroma(
                 collection_name=Config.COLLECTION_NAME,
                 embedding_function=self.embeddings,
                 persist_directory=Config.CHROMA_PATH
             )
-        
+
+        # Parser de PDFs (LlamaParse para mejor manejo de tablas legales)
         self.parser = LlamaParse(
             result_type="markdown",
             language="es",
@@ -56,7 +74,7 @@ class LegalIngestor:
                 io_time = time.time() - io_start
                 # Retardo dinámico calculado en Config
                 if Config.REQUEST_DELAY > 0:
-                    time.sleep(Config.REQUEST_DELAY) 
+                    time.sleep(Config.REQUEST_DELAY)
                 return io_time
             except Exception as e:
                 logger.error(f"Error en _safe_add_documents: {str(e)}")
@@ -70,21 +88,24 @@ class LegalIngestor:
         stats = {"parsing_speed": 0.0, "embedding_speed": 0.0, "io_latency": 0.0}
         success = True
         io_total_time = 0
-        
+
         with IngestionUI.create_progress() as progress:
             # 1. Parsing
             parse_task = progress.add_task("[magenta]Parsing PDFs...", total=len(file_paths))
             all_documents = []
             parsing_start = time.time()
-            
+
             for path in file_paths:
                 if self.dry_run:
                     time.sleep(0.5)
                     all_documents.append(Document(page_content=f"Simulación de {path}"))
                 else:
-                    llama_docs = self.parser.load_data(path)
-                    for ldoc in llama_docs:
-                        all_documents.append(Document(page_content=ldoc.text, metadata={"source": path}))
+                    try:
+                        llama_docs = self.parser.load_data(path)
+                        for ldoc in llama_docs:
+                            all_documents.append(Document(page_content=ldoc.text, metadata={"source": path}))
+                    except Exception as e:
+                        console.print(f"[yellow]⚠️ Warning: Error procesando {path}: {e}[/]")
                 progress.update(parse_task, advance=1)
 
             stats["parsing_speed"] = len(file_paths) / max((time.time() - parsing_start) / 60, 0.001)
@@ -92,7 +113,7 @@ class LegalIngestor:
             # 2. Indexación con Batching Dinámico
             index_task = progress.add_task(f"[green]Indexando (Lotes de {batch_size})...", total=len(all_documents))
             indexing_start = time.time()
-            
+
             for i in range(0, len(all_documents), batch_size):
                 batch = all_documents[i:i + batch_size]
                 try:
@@ -103,7 +124,7 @@ class LegalIngestor:
                             self.auditor.add_usage(input_text=doc.page_content)
                     else:
                         time.sleep(0.5)
-                    
+
                     progress.update(index_task, advance=len(batch))
                 except Exception as e:
                     console.print(f"\n[bold red]❌ Error fatal en lote {i}: {str(e)}[/bold red]")

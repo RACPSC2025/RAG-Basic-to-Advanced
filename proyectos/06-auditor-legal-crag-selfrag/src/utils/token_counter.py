@@ -1,29 +1,41 @@
+"""
+Auditor de Tokens - Proyecto 6
+
+Migrado a AWS Bedrock - 2026-03-30
+"""
+
 import time
 from typing import Dict
 
+
 class TokenAuditor:
     """
-    Auditor local para el seguimiento de cuotas de la API de Gemini.
-    Basado en límites de Free Tier (estimados para 2026).
+    Auditor local para el seguimiento de cuotas de API.
+    Actualizado para AWS Bedrock (Titan Embeddings).
     """
-    def __init__(self, model_name: str = "gemini-2.0-flash"):
+    
+    def __init__(self, model_name: str = "amazon.titan-embed-text-v2:0"):
         self.model = model_name
         self.used_tokens = 0
-        # Límites teóricos Free Tier (ajustables)
-        self.tpm_limit = 1_000_000  # Tokens Per Minute
-        self.rpm_limit = 15         # Requests Per Minute
-        self.daily_limit = 1_500    # Requests Per Day (aproximado)
+        # Estimación para Titan Embeddings v2
+        # 1 token ≈ 4 caracteres en promedio para español
+        self.chars_per_token = 4
         
+        # Rate limits (ajustables según tu cuota de AWS)
+        self.tpm_limit = 1_000_000  # Tokens Per Minute (estimado)
+        self.rpm_limit = 50         # Requests Per Minute (estimado)
+        self.daily_limit = 10_000   # Requests Per Day (estimado)
+
         self.start_time = time.time()
         self.request_count = 0
 
     def add_usage(self, input_text: str, output_text: str = ""):
         """Estima y acumula el uso de tokens."""
-        # Estimación conservadora: 1 token cada 3.5 caracteres para español
-        input_tokens = len(input_text) // 3.5
-        output_tokens = len(output_text) // 3.5
+        # Estimación: 1 token cada 4 caracteres para español
+        input_tokens = len(input_text) // self.chars_per_token
+        output_tokens = len(output_text) // self.chars_per_token if output_text else 0
         total = int(input_tokens + output_tokens)
-        
+
         self.used_tokens += total
         self.request_count += 1
         return total
