@@ -3,14 +3,17 @@ Configuración centralizada del Chatbot Legal.
 
 Este módulo gestiona toda la configuración de la aplicación,
 incluyendo variables de entorno y constantes.
+
+Usa AWS Bedrock como proveedor de LLM (Amazon Nova Lite).
 """
 
 import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Cargar variables de entorno
-load_dotenv()
+# Cargar variables de entorno desde la raíz del proyecto
+_ROOT = Path(__file__).resolve().parents[2]
+load_dotenv(_ROOT / ".env")
 
 # ===========================================
 # Configuración de la Aplicación
@@ -21,12 +24,24 @@ APP_VERSION = os.getenv("APP_VERSION", "1.0.0")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
 # ===========================================
-# Configuración del LLM
+# Configuración de AWS Bedrock
 # ===========================================
 
-LLM_MODEL = os.getenv("LLM_MODEL", "gemini-2.0-flash-exp")
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID", "")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", "")
+AWS_SESSION_TOKEN = os.getenv("AWS_SESSION_TOKEN", "")
+AWS_REGION = os.getenv("AWS_REGION", "us-east-2")
+
+# Modelo principal para chat (Amazon Nova Lite - inference profile)
+LLM_MODEL_ID = os.getenv(
+    "LLM_MODEL_ID",
+    "arn:aws:bedrock:us-east-2:762233737662:inference-profile/us.amazon.nova-lite-v1:0"
+)
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "amazon")  # Requerido cuando model_id es un ARN
+
+# Parámetros del LLM
 LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.3"))
-LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "1000"))
+LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "2048"))
 
 # ===========================================
 # Configuración de Memoria
@@ -61,24 +76,32 @@ DATA_DIR.mkdir(exist_ok=True)
 def validate_config():
     """
     Validar que las variables de entorno críticas estén configuradas.
-    
+
     Raises:
         ValueError: Si alguna variable crítica falta
     """
-    google_api_key = os.getenv("GOOGLE_API_KEY")
-    
-    if not google_api_key:
+    aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
+    aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
+
+    if not aws_access_key:
         raise ValueError(
-            "GOOGLE_API_KEY no está configurada en el archivo .env. "
-            "Por favor obtén una API Key en https://aistudio.google.com/app/apikey"
+            "AWS_ACCESS_KEY_ID no está configurada en el archivo .env. "
+            "Por favor configura tus credenciales de AWS."
         )
-    
-    if google_api_key == "tu_api_key_aqui":
+
+    if not aws_secret_key:
         raise ValueError(
-            "GOOGLE_API_KEY tiene el valor por defecto. "
-            "Por favor configura tu API Key real en el archivo .env"
+            "AWS_SECRET_ACCESS_KEY no está configurada en el archivo .env. "
+            "Por favor configura tus credenciales de AWS."
         )
-    
+
+    # Validar que no sean valores por defecto
+    if aws_access_key == "tu_aws_access_key":
+        raise ValueError(
+            "AWS_ACCESS_KEY_ID tiene el valor por defecto. "
+            "Por favor configura tus credenciales reales de AWS."
+        )
+
     return True
 
 # Validar configuración al importar

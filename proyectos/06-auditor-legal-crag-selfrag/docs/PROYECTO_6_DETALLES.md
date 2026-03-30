@@ -2,82 +2,55 @@
 
 ## 1. RESUMEN DEL PROYECTO
 **Nombre Real**: Auditor Legal Inteligente con Recuperación Correctiva y Auto-Reflexión.
-**Propósito**: Crear un sistema RAG de grado profesional para el dominio legal colombiano que garantice 0% de alucinaciones mediante la validación continua de hechos y relevancia.
+**Propósito**: Sistema RAG de grado profesional que garantiza 0% de alucinaciones mediante validación continua de hechos y relevancia legal.
 
 ---
 
-## 2. ARQUITECTURA TÉCNICA (Stack Actualizado)
-- **Orquestación**: [LangGraph](https://langchain-ai.github.io/langgraph/) (Grafos de estado cíclicos).
-- **LLM**: Google Gemini 2.5 Flash (Configurado vía .env).
-- **Vector Store**: ChromaDB (Local por defecto) / Qdrant Cloud (Ready).
-- **Ingestión**: LlamaParse (Especializado en tablas legales colombianas).
-- **Visualización**: Rich (Interfaz CLI profesional con métricas en tiempo real).
+## 2. ARQUITECTURA TÉCNICA (Stack)
+- **Orquestación**: [LangGraph](https://langchain-ai.github.io/langgraph/).
+- **LLM**: Google Gemini 1.5 Flash (Optimizado para cuotas Free Tier).
+- **Vector Store**: ChromaDB (Persistente local).
+- **Observabilidad**: Rich (Métricas de velocidad y consumo en tiempo real).
 
 ---
 
-## 3. FASES DE DESARROLLO Y DOCUMENTACIÓN (Actualizado)
+## 3. GESTIÓN DINÁMICA DE INFRAESTRUCTURA (.env)
+El sistema está diseñado para ser agnóstico a los límites de la API. Se configura mediante las siguientes variables:
 
-### Fase 1: Ingestión con Observabilidad
-- **Descripción**: Procesamiento de documentos con monitoreo de rendimiento.
-- **Métricas**: 
-  - `Parsing Speed`: Documentos procesados por minuto.
-  - `Embedding Throughput`: Chunks/segundo (Latencia de API).
-  - `IO Latency`: Tiempo de persistencia en disco.
-
-### Fase 2: Auditoría de Tokens (Token Management)
-- **Lógica**: Seguimiento local del consumo para evitar bloqueos en el Free Tier de Gemini.
-- **Estimación**: 1 token por cada 3.5 caracteres (ajustado para español legal).
-
-### Fase 2: Calificación de Documentos (Document Grading)
-- **Lógica**: Un nodo de LangGraph evalúa cada documento recuperado: `Relevante` o `Irrelevante`.
-- **Salida**: Si no hay documentos relevantes, el flujo se desvía hacia la **Transformación de Consulta**.
-
-### Fase 3: Recuperación Correctiva (CRAG)
-- **Lógica**: Si los documentos iniciales no sirven, el LLM optimiza la búsqueda legal (Query Transformation) para intentar una nueva recuperación más precisa.
-- **Diferenciador**: Evita que el LLM intente responder con información insuficiente.
-
-### Fase 4: Generación y Verificación de Alucinaciones (Self-RAG)
-- **Lógica**: 
-  1. **Generación**: Basada únicamente en documentos calificados como relevantes.
-  2. **Hallucination Grader**: ¿La respuesta está soportada por los documentos? (Grounding).
-  3. **Answer Grader**: ¿La respuesta resuelve realmente la duda del usuario?
-
-### Fase 5: Interfaz de Auditoría y Logs
-- **Descripción**: Sistema de logging que muestra al usuario el "razonamiento" del auditor (ej. "Descarté el Doc A por irrelevancia, reescribí la consulta a X...").
+| Variable | Propósito | Efecto en el Código |
+| :--- | :--- | :--- |
+| `RATE_LIMIT_REQUESTS_PER_MINUTE` | Control de cuota RPM | Calcula automáticamente el `delay` entre pasos del agente. |
+| `RATE_LIMIT_BURST_LIMIT` | Control de ráfagas | Define el tamaño base de los lotes de procesamiento. |
+| `INGESTION_BATCH_SIZE` | Tamaño de lote de ingesta | Cuántos documentos se envían a embedding en una sola llamada. |
 
 ---
 
-## 4. ESTRUCTURA DE CÓDIGO (Roadmap)
+## 4. FASES DEL PIPELINE
 
+### Fase 1: Ingesta Resiliente
+Usa **Batching** y **Exponential Backoff** (vía `tenacity`) para subir documentos sin activar el error 429.
+
+### Fase 2: Recuperación Correctiva (CRAG)
+El agente evalúa los documentos recuperados. Si son irrelevantes, **optimiza la consulta** y reintenta la búsqueda.
+
+### Fase 3: Auto-Reflexión (Self-RAG)
+Incluye dos filtros críticos:
+1.  **Hallucination Grader**: Verifica que la respuesta no invente leyes (Grounding).
+2.  **Answer Grader**: Asegura que la respuesta sea útil para el caso legal.
+
+---
+
+## 5. MANUAL DE OPERACIÓN
+
+### Ingesta de Documentos:
 ```bash
-proyectos/06-auditor-legal-crag-selfrag/
-├── src/
-│   ├── agent/
-│   │   ├── state.py      # Definición del estado del grafo (TypedDict)
-│   │   ├── nodes.py      # Lógica de cada nodo (Retrieve, Grade, Generate)
-│   │   └── graph.py      # Construcción del grafo y aristas condicionales
-│   ├── config.py         # Variables de entorno y configuración
-│   └── utils.py          # Formateo de documentos y prompts
-├── docs/
-│   └── PROYECTO_6_DETALLES.md # Este documento
-├── main.py               # Punto de entrada
-└── README.md             # Instrucciones de uso rápido
+python proyectos/06-auditor-legal-crag-selfrag/ingest_data.py --path data/sample.pdf
+```
+
+### Ejecución del Auditor:
+```bash
+python proyectos/06-auditor-legal-crag-selfrag/main.py
 ```
 
 ---
-
-## 5. CÓDIGO DE REFERENCIA (Patrón de Diseño Profesional)
-
-### Fragmento de Calificador de Documentos (Pydantic)
-```python
-class GradeDocuments(BaseModel):
-    """Calificación binaria de relevancia de documentos."""
-    binary_score: str = Field(description="Documentos relevantes 'yes' o 'no'")
-```
-
-### Lógica de Re-intentos
-El grafo permite hasta 3 reintentos de búsqueda antes de admitir que no tiene la información, garantizando honestidad técnica.
-
----
-
-*Proyecto diseñado por Gemini CLI - 2026-03-29*
+*Documentación actualizada por Aether (Gemini CLI) - 2026-03-29*

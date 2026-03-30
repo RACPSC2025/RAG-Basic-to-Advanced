@@ -2,7 +2,7 @@
 Chatbot Legal Básico - Módulo Principal
 
 Este módulo implementa el chatbot legal completo integrando:
-- LLM (Google Gemini)
+- LLM (AWS Bedrock - Amazon Nova Lite)
 - Memoria (corto y largo plazo)
 - Human in the Loop
 - Logging y manejo de errores

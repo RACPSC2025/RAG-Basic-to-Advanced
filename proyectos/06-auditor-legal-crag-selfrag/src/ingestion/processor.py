@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 class LegalIngestor:
     """
-    Motor de ingesta con Paciencia Extrema para Free Tier.
+    Motor de ingesta dinámico basado en Rate Limits de .env.
     """
     def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
@@ -43,26 +43,33 @@ class LegalIngestor:
         )
 
     @retry(
-        wait=wait_exponential(multiplier=2, min=10, max=120), # Más agresivo en la espera
-        stop=stop_after_attempt(7),                          # Más intentos
+        wait=wait_exponential(multiplier=2, min=Config.REQUEST_DELAY, max=120),
+        stop=stop_after_attempt(5),
         retry=retry_if_exception_type(Exception)
     )
-    def _safe_add_documents(self, batch: List[Document]):
-        """Añade documentos con reintentos y esperas largas."""
+    def _safe_add_documents(self, batch: List[Document]) -> float:
+        """Añade documentos y respeta el retardo configurado."""
         if not self.dry_run:
             try:
+                io_start = time.time()
                 self.vector_store.add_documents(batch)
-                # Pausa de seguridad larga para resetear el contador de la API
-                time.sleep(12) 
+                io_time = time.time() - io_start
+                # Retardo dinámico calculado en Config
+                if Config.REQUEST_DELAY > 0:
+                    time.sleep(Config.REQUEST_DELAY) 
+                return io_time
             except Exception as e:
                 logger.error(f"Error en _safe_add_documents: {str(e)}")
                 raise e
+        return 0.0
 
-    def process_files(self, file_paths: List[str], batch_size: int = 5):
-        """Procesa archivos con lotes pequeños para evitar 429."""
-        start_time = time.time()
-        stats = {"parsing_speed": 0.0, "embedding_speed": 0.0}
+    def process_files(self, file_paths: List[str]):
+        """Procesa archivos con batch_size dinámico."""
+        # Usamos el tamaño de lote definido en Config
+        batch_size = Config.INGESTION_BATCH_SIZE
+        stats = {"parsing_speed": 0.0, "embedding_speed": 0.0, "io_latency": 0.0}
         success = True
+        io_total_time = 0
         
         with IngestionUI.create_progress() as progress:
             # 1. Parsing
@@ -82,15 +89,16 @@ class LegalIngestor:
 
             stats["parsing_speed"] = len(file_paths) / max((time.time() - parsing_start) / 60, 0.001)
 
-            # 2. Indexación con lotes muy pequeños (5)
-            index_task = progress.add_task("[green]Indexando (Lotes de 5)...", total=len(all_documents))
+            # 2. Indexación con Batching Dinámico
+            index_task = progress.add_task(f"[green]Indexando (Lotes de {batch_size})...", total=len(all_documents))
             indexing_start = time.time()
             
             for i in range(0, len(all_documents), batch_size):
                 batch = all_documents[i:i + batch_size]
                 try:
                     if not self.dry_run:
-                        self._safe_add_documents(batch)
+                        io_time = self._safe_add_documents(batch)
+                        io_total_time += io_time
                         for doc in batch:
                             self.auditor.add_usage(input_text=doc.page_content)
                     else:
@@ -102,9 +110,13 @@ class LegalIngestor:
                     success = False
                     break
 
+            elapsed_indexing = time.time() - indexing_start
+            stats["embedding_speed"] = len(all_documents) / max(elapsed_indexing, 0.001)
+            stats["io_latency"] = io_total_time / max(len(all_documents), 1)
+
         if success:
             IngestionUI.show_final_stats(stats)
             IngestionUI.show_token_report(self.auditor.get_summary())
-            console.print(f"\n[bold green]✅ Ingesta COMPLETADA al 100%[/bold green]")
+            console.print(f"\n[bold green]✅ Ingesta COMPLETADA (Lote: {batch_size}, Delay: {Config.REQUEST_DELAY:.1f}s)[/bold green]")
         else:
-            console.print(f"\n[bold yellow]⚠️ Ingesta PARCIAL: El proceso se detuvo para evitar un bloqueo mayor.[/bold yellow]")
+            console.print(f"\n[bold yellow]⚠️ Ingesta PARCIAL.[/bold yellow]")

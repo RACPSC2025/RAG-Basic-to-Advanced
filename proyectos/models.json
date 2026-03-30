@@ -1,0 +1,7 @@
+{
+    "recommended": {
+        "simple_text": "arn:aws:bedrock:us-east-2:762233737662:inference-profile/us.amazon.nova-lite-v1:0",
+        "image_analysis": "arn:aws:bedrock:us-east-2:762233737662:inference-profile/us.amazon.nova-pro-v1:0",
+        "deep_analysis": "arn:aws:bedrock:us-east-2:762233737662:inference-profile/us.meta.llama3-3-70b-instruct-v1:0"
+    }
+}

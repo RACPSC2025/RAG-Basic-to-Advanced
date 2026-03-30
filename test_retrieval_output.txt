@@ -1,0 +1,34 @@
+1. Conectando a ChromaDB...
+[OK] ChromaDB tiene 3822 documentos indexados.
+
+2. Buscando query: 'ARTÍCULO 2.2.1.1.7. Sanción disciplinaria'
+[OK] Se recuperaron 4 documentos:
+
+--- Doc 1 (Source: sample.pdf) ---
+ARTÍCULO 2.2.5.1.56. Sanciones. Corresponde a las Direcciones Territoriales del Ministerio del Trabajo, de conformidad con el artículo 91 del
+Decreto-Ley 1295 de 1994, y el artículo 20 de la Ley 1562 de 2012, o las normas que los modiﬁquen, adicionen o sustituyan, imponer las
+sanciones por incumplimiento de lo dispuesto en este capítulo por parte de los empleadores y Administradoras de Riesgos Lab...
+
+--- Doc 2 (Source: sample.pdf) ---
+ARTÍCULO 2.2.4.6.36. Sanciones. El incumplimiento a lo establecido en el presente capítulo y demás normas que lo adicionen, modiﬁquen o
+sustituyan, será sancionado en los términos previstos en el artículo 91 del Decreto Ley número 1295 de 1994, modiﬁcado parcialmente y
+adicionado por el artículo 13 de la Ley 1562 de 2012 y las normas que a su vez lo adicionen, modiﬁquen o sustituyan....
+
+--- Doc 3 (Source: sample.pdf) ---
+ARTÍCULO 2.2.4.7.13. Sanciones. Corresponde a la Superintendencia Financiera, la Superintendencia Nacional de Salud, las Direcciones
+Departamentales y Distritales de Salud y a las Direcciones Territoriales o quienes hagan sus veces, de conformidad con las competencias
+asignadas en las normas legales vigentes, imponer las sanciones frente al incumplimiento de las disposiciones del Sistema de Garant...
+
+--- Doc 4 (Source: sample.pdf) ---
+ARTÍCULO 2.2.9.1.7. Sanciones. Las sanciones a que se reﬁere el literal a) del artículo 8 de la Ley 53 de 1977, se impondrán previo estudio de la
+queja formulada, atendiendo a la naturaleza y gravedad de la falta y a los antecedentes personales y profesionales del responsable. Las
+sanciones serán.
+1. Amonestación verbal;
+2. Amonestación pública mediante resolución motivada.
+(Decreto 2833 de 1981, ...
+
+3. Evaluando relevancia (Grader Node)...
+Doc 1 -> Score: no | Razon: El fragmento proporcionado se refiere a las sanciones impuestas por las Direcciones Territoriales del Ministerio del Trabajo, pero no aborda específicamente la sanción disciplinaria mencionada en la pregunta.
+Doc 2 -> Score: no | Razon: El fragmento proporcionado se refiere a sanciones en general, pero no especifica la sanción disciplinaria mencionada en la pregunta.
+Doc 3 -> Score: no | Razon: El fragmento proporcionado se refiere a sanciones en general, pero no especifica la sanción disciplinaria mencionada en la pregunta.
+Doc 4 -> Score: no | Razon: El fragmento del documento se refiere a sanciones en general, pero no especifica la sanción disciplinaria mencionada en la pregunta.
