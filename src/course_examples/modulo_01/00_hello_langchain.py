@@ -27,7 +27,7 @@ def main():
     
     # 2. Inicializar el modelo
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash-exp",  # Modelo gratuito recomendado
+        model=os.getenv("GOOGLE_GEMINI_MODEL", "gemini-2.5-flash-lite"),  # Modelo gratuito recomendado
         temperature=0.7,
         max_tokens=None,
         timeout=None,
