@@ -3135,6 +3135,7 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "qdrant-client" },
     { name = "rich" },
+    { name = "tenacity" },
     { name = "tqdm" },
 ]
 
@@ -3164,6 +3165,7 @@ requires-dist = [
     { name = "python-dotenv", specifier = ">=1.2.2" },
     { name = "qdrant-client", specifier = ">=1.17.1" },
     { name = "rich", specifier = ">=14.3.3" },
+    { name = "tenacity", specifier = ">=9.1.4" },
     { name = "tqdm", specifier = ">=4.67.3" },
 ]
 

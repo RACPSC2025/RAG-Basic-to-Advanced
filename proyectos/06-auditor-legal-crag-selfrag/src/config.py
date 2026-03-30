@@ -4,13 +4,15 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
-    """Configuración central del Auditor Legal (Refactorizada con Gemini 2.5)."""
+    """Configuración central del Auditor Legal (Sincronizada con los modelos activos de tu API)."""
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
     
-    # --- CONFIGURACIÓN DE MODELOS (SEGÚN .ENV) ---
-    # Usamos gemini-2.5-flash como configuraste en tu entorno
+    # --- CONFIGURACIÓN DE MODELOS ---
+    # Gemini 2.5 Flash para razonamiento (desde .env)
     LLM_MODEL = os.getenv("GOOGLE_GEMINI_MODEL", "gemini-2.5-flash") 
-    EMBEDDING_MODEL = "models/embedding-001"
+    
+    # Modelo de Embeddings verificado: gemini-embedding-001
+    EMBEDDING_MODEL = "models/gemini-embedding-001" 
     
     # --- CONFIGURACIÓN CHROMADB ---
     CHROMA_PATH = "./chroma_db"
